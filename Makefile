@@ -64,6 +64,15 @@ REMOTE_BRANCH := $(shell git branch -vv | awk '/^\*/{split(substr($$4, 2, length
 
 AWS_SHARED_CREDENTIALS_FILE=$(HOME)/.aws/credentials
 
+# Dynamically generate test targets for each workspace
+define TEST_RULE
+test-$(1):
+	$(RUST_COMMAND) "--env RUST_BACKTRACE=full" "cargo test -p $(1)"
+endef
+
+CRATES=$(shell sed -e '/members/,/]/!d' Cargo.toml | tail -n +2 | head -n -1 | sed 's/,//' | xargs -n1 -I{} sh -c 'grep -E "^name *=" {}/Cargo.toml | tail -n1' | sed 's/name *= *"\([A-Za-z0-9_\-]*\)"/\1/')
+$(foreach _crate, $(CRATES), $(eval $(call TEST_RULE,$(strip $(_crate)))))
+
 .PHONY:build
 build: ## Build the agent
 	$(RUST_COMMAND) "--env RUST_BACKTRACE=full" "cargo build"
