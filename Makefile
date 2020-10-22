@@ -64,8 +64,10 @@ REMOTE_BRANCH := $(shell git branch -vv | awk '/^\*/{split(substr($$4, 2, length
 
 AWS_SHARED_CREDENTIALS_FILE=$(HOME)/.aws/credentials
 
+TEST_RULES=
 # Dynamically generate test targets for each workspace
 define TEST_RULE
+TEST_RULES=$(TEST_RULES)test-$(1): <> Run unit tests for $(1) crate\\n
 test-$(1):
 	$(RUST_COMMAND) "--env RUST_BACKTRACE=full" "cargo test -p $(1)"
 endef
@@ -227,3 +229,4 @@ run-release: ## Run the release version of the agent
 .PHONY:help
 help: ## Prints out a helpful description of each possible target
 	@awk 'BEGIN {FS = ":.*?## "}; /^.+: .*?## / && !/awk/ {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@$(SHELL) -c "echo '$(TEST_RULES)'" |  awk 'BEGIN {FS = ":.*?<> "}; /^.+: .*?<> / && !/awk/ {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
